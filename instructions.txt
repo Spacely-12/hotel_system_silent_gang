@@ -1,0 +1,32 @@
+# Hotel Booking System Instructions
+
+## Prerequisites
+- Python 3.x
+
+## Setup
+
+1. **Set up the database**:
+   Run the `setup_db.py` script to create the necessary tables in the SQLite database.
+   ```sh
+   python setup_db.py
+   ```
+
+## Running the Application
+
+1. **Run the main application**:
+   ```sh
+   python main.py
+   ```
+
+2. **Admin Login**:
+   - Click the "Admin" button.
+   - Enter the default credentials:
+     - Username: `admin`
+     - Password: `admin123`
+   - You will be redirected to the admin interface where you can add rooms and view bookings.
+
+3. **User Registration and Login**:
+   - Click the "User" button.
+   - To register, enter a username and password, then click "Register".
+   - To log in, enter your username and password, then click "Login".
+   - After logging in, you can view available rooms and book them.
