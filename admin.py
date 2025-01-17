@@ -45,24 +45,37 @@ class AdminInterface(tk.Frame):
         for widget in self.winfo_children():
             widget.destroy()
 
-        tk.Label(self, text="All Bookings", font=("Helvetica", 18)).grid(row=0, column=0, columnspan=2, pady=20)
+        tk.Label(self, text="All Bookings", font=("Helvetica", 18)).grid(row=0, column=0, columnspan=5, pady=20)
+        
+        # Add headers
+        headers = ["Room Number", "Type", "Price", "Booking Date", "User"]
+        for i, header in enumerate(headers):
+            tk.Label(self, text=header, font=("Helvetica", 10, "bold")).grid(row=1, column=i, padx=10, pady=5)
 
         conn = sqlite3.connect('hotel_system.db')
         cursor = conn.cursor()
         cursor.execute('''
-        SELECT rooms.room_number, rooms.room_type, rooms.price, bookings.booking_date, users.username
-        FROM bookings
-        JOIN rooms ON bookings.room_id = rooms.id
-        JOIN users ON bookings.user_id = users.id
+        SELECT b.room_number, b.room_type, b.price, b.booking_date, u.username
+        FROM bookings b
+        JOIN users u ON b.user_id = u.id
+        ORDER BY b.booking_date DESC
         ''')
         bookings = cursor.fetchall()
         conn.close()
 
-        for i, booking in enumerate(bookings):
-            booking_info = f"Room Number: {booking[0]}, Type: {booking[1]}, Price: {booking[2]}, Date: {booking[3]}, User: {booking[4]}"
-            tk.Label(self, text=booking_info).grid(row=i+1, column=0, columnspan=2, padx=10, pady=5)
+        if not bookings:
+            tk.Label(self, text="No bookings found", font=("Helvetica", 10)).grid(row=2, column=0, columnspan=5, pady=20)
+        else:
+            for i, booking in enumerate(bookings, start=2):
+                tk.Label(self, text=booking[0]).grid(row=i, column=0, padx=10, pady=5)
+                tk.Label(self, text=booking[1]).grid(row=i, column=1, padx=10, pady=5)
+                tk.Label(self, text=f"${booking[2]:.2f}").grid(row=i, column=2, padx=10, pady=5)
+                tk.Label(self, text=booking[3]).grid(row=i, column=3, padx=10, pady=5)
+                tk.Label(self, text=booking[4]).grid(row=i, column=4, padx=10, pady=5)
 
-        tk.Button(self, text="Back to Main", command=lambda: self.controller.show_frame("MainPage")).grid(row=len(bookings)+1, column=0, columnspan=2, pady=20)
+        row = len(bookings) + 2 if bookings else 3
+        tk.Button(self, text="Back to Admin Page", 
+                command=self.create_widgets).grid(row=row, column=0, columnspan=5, pady=20)
 
 if __name__ == "__main__":
     root = tk.Tk()

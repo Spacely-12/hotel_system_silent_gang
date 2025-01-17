@@ -80,40 +80,63 @@ class UserInterface(tk.Frame):
     def book_room(self, room):
         conn = sqlite3.connect('hotel_system.db')
         cursor = conn.cursor()
-        cursor.execute('''
-        INSERT INTO bookings (user_id, room_id) VALUES (?, ?)
-        ''', (self.user_id, room[0]))
-        cursor.execute('''
-        DELETE FROM rooms WHERE id = ?
-        ''', (room[0],))
-        conn.commit()
-        conn.close()
-        messagebox.showinfo("Room Booked", f"Room {room[1]} booked successfully.")
-        self.view_available_rooms()
+        try:
+            # Store booking details
+            cursor.execute('''
+            INSERT INTO bookings (user_id, room_number, room_type, price)
+            VALUES (?, ?, ?, ?)
+            ''', (self.user_id, room[1], room[2], room[3]))
+            
+            # Update room status
+            cursor.execute('''
+            UPDATE rooms SET is_booked = 1
+            WHERE id = ?
+            ''', (room[0],))
+            
+            conn.commit()
+            messagebox.showinfo("Success", f"Room {room[1]} booked successfully!")
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to book room: {e}")
+        finally:
+            conn.close()
+            self.view_available_rooms()
 
     def view_booking_history(self):
         for widget in self.winfo_children():
             widget.destroy()
 
-        tk.Label(self, text="Booking History", font=("Helvetica", 18)).grid(row=0, column=0, columnspan=2, pady=20)
+        tk.Label(self, text="Booking History", font=("Helvetica", 18)).grid(row=0, column=0, columnspan=4, pady=20)
+        
+        # Add headers
+        headers = ["Room Number", "Type", "Price", "Booking Date"]
+        for i, header in enumerate(headers):
+            tk.Label(self, text=header, font=("Helvetica", 10, "bold")).grid(row=1, column=i, padx=10, pady=5)
 
         conn = sqlite3.connect('hotel_system.db')
         cursor = conn.cursor()
         cursor.execute('''
-        SELECT rooms.room_number, rooms.room_type, rooms.price, bookings.booking_date
+        SELECT room_number, room_type, price, booking_date
         FROM bookings
-        JOIN rooms ON bookings.room_id = rooms.id
-        WHERE bookings.user_id = ?
+        WHERE user_id = ?
+        ORDER BY booking_date DESC
         ''', (self.user_id,))
         bookings = cursor.fetchall()
         conn.close()
 
-        for i, booking in enumerate(bookings):
-            booking_info = f"Room Number: {booking[0]}, Type: {booking[1]}, Price: {booking[2]}, Date: {booking[3]}"
-            tk.Label(self, text=booking_info).grid(row=i+1, column=0, columnspan=2, padx=10, pady=5)
+        if not bookings:
+            tk.Label(self, text="No booking history found", font=("Helvetica", 10)).grid(row=2, column=0, columnspan=4, pady=20)
+        else:
+            for i, booking in enumerate(bookings, start=2):
+                tk.Label(self, text=booking[0]).grid(row=i, column=0, padx=10, pady=5)
+                tk.Label(self, text=booking[1]).grid(row=i, column=1, padx=10, pady=5)
+                tk.Label(self, text=f"${booking[2]:.2f}").grid(row=i, column=2, padx=10, pady=5)
+                tk.Label(self, text=booking[3]).grid(row=i, column=3, padx=10, pady=5)
 
-        tk.Button(self, text="Back to Available Rooms", command=self.view_available_rooms).grid(row=len(bookings)+1, column=0, columnspan=2, pady=20)
-        tk.Button(self, text="Back to Main", command=lambda: self.controller.show_frame("MainPage")).grid(row=len(bookings)+2, column=0, columnspan=2, pady=10)
+        row = len(bookings) + 2 if bookings else 3
+        tk.Button(self, text="Back to Available Rooms", 
+                command=self.view_available_rooms).grid(row=row, column=0, columnspan=2, pady=20)
+        tk.Button(self, text="Back to Main", 
+                command=lambda: self.controller.show_frame("MainPage")).grid(row=row, column=2, columnspan=2, pady=20)
 
 if __name__ == "__main__":
     root = tk.Tk()
